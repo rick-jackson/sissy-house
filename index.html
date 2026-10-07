@@ -1,0 +1,512 @@
+<!DOCTYPE html>
+<html lang="uk">
+<head>
+<meta charset="UTF-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sissy House — дім фембоїв і футанарі</title>
+<link rel="preconnect" href="https://fonts.googleapis.com" />
+<link href="https://fonts.googleapis.com/css2?family=Outfit:wght@400;600;800&family=Literata:ital,opsz,wght@0,7..72,500;1,7..72,500&display=swap" rel="stylesheet" />
+<style>
+  :root {
+    --bg: #140c18;
+    --panel: #24162c;
+    --ink: #f6e9f4;
+    --muted: #c9b3c8;
+    --pink: #ff6fae;
+    --rose: #ff4d8d;
+    --lilac: #c9a6ff;
+    --mint: #7dffa8;
+    --gold: #ffd36e;
+    --line: rgba(255,255,255,.12);
+  }
+  * { box-sizing: border-box; }
+  html, body { margin: 0; height: 100%; background: var(--bg); color: var(--ink); font-family: Outfit, system-ui, sans-serif; }
+  button, input { font-family: inherit; }
+  #app { min-height: 100%; display: grid; grid-template-rows: auto 1fr auto; }
+  header {
+    display: flex; gap: 12px; align-items: center; justify-content: space-between;
+    padding: 12px 16px; border-bottom: 1px solid var(--line);
+    background: linear-gradient(90deg, #2a1633, #1a1022);
+  }
+  header h1 { margin: 0; font-size: 18px; letter-spacing: .04em; }
+  header h1 span { color: var(--pink); }
+  .stats { display: flex; gap: 8px; flex-wrap: wrap; }
+  .chip { background: #0006; border: 1px solid var(--line); border-radius: 999px; padding: 4px 10px; font-size: 12px; }
+  .chip b { color: var(--gold); }
+  main { display: grid; grid-template-columns: 280px 1fr 320px; min-height: 0; }
+  @media (max-width: 980px) {
+    main { grid-template-columns: 1fr; }
+    aside, #log { max-height: 280px; }
+  }
+  aside, #stage, #log { min-height: 0; overflow: auto; }
+  aside { border-right: 1px solid var(--line); padding: 12px; background: #1b1122; }
+  #log { border-left: 1px solid var(--line); padding: 12px; background: #1b1122; }
+  .room-btn, .choice, .obj {
+    width: 100%; text-align: left; margin: 6px 0; padding: 10px 12px;
+    border-radius: 12px; border: 1px solid var(--line); background: #2c1b36; color: var(--ink); cursor: pointer;
+  }
+  .room-btn.active, .obj:hover, .choice:hover, .room-btn:hover { border-color: var(--pink); background: #3a2246; }
+  #stage { padding: 16px; display: flex; flex-direction: column; gap: 12px; }
+  .scene {
+    border-radius: 18px; min-height: 220px; padding: 16px;
+    background:
+      radial-gradient(600px 180px at 80% 20%, rgba(255,111,174,.35), transparent 60%),
+      linear-gradient(160deg, #3a2148, #1b1024 70%);
+    border: 1px solid var(--line);
+    display: grid; grid-template-columns: 180px 1fr; gap: 14px; align-items: center;
+  }
+  .ph {
+    width: 180px; height: 220px; border-radius: 16px;
+    display: grid; place-items: center; text-align: center; padding: 10px;
+    background: repeating-linear-gradient(135deg, #5a2a55, #5a2a55 10px, #3d1d42 10px, #3d1d42 20px);
+    border: 2px dashed #ffb3d4; color: #ffe6f2; font-weight: 800;
+  }
+  .ph small { font-weight: 500; display: block; margin-top: 6px; color: #ffd0e6; }
+  h2 { margin: 0 0 6px; }
+  p.story { font-family: Literata, serif; line-height: 1.5; color: #f3e7f1; margin: 0; }
+  .bars { display: grid; gap: 6px; margin-top: 8px; }
+  .bar { height: 8px; background: #0005; border-radius: 99px; overflow: hidden; }
+  .bar > i { display: block; height: 100%; background: linear-gradient(90deg, var(--pink), var(--lilac)); }
+  .muted { color: var(--muted); font-size: 13px; }
+  #log .entry { border-bottom: 1px solid var(--line); padding: 8px 0; font-size: 13px; }
+  footer { padding: 8px 16px; border-top: 1px solid var(--line); display: flex; justify-content: space-between; gap: 8px; }
+  .ghost { background: transparent; color: var(--ink); border: 1px solid var(--line); border-radius: 10px; padding: 8px 12px; cursor: pointer; }
+  #gate, #minigame {
+    position: fixed; inset: 0; background: #0d0812ee; display: grid; place-items: center; z-index: 5; padding: 16px;
+  }
+  .card { width: min(640px, 100%); background: #24162c; border: 1px solid var(--line); border-radius: 18px; padding: 18px; }
+  .row { display: flex; gap: 8px; flex-wrap: wrap; }
+  .big { font-size: 42px; font-weight: 800; color: var(--gold); }
+  canvas { width: 100%; background: #120915; border-radius: 12px; border: 1px solid var(--line); touch-action: none; }
+  .hidden { display: none !important; }
+  .tag { display: inline-block; background: #ff6fae22; color: var(--pink); border-radius: 99px; padding: 2px 8px; font-size: 12px; }
+</style>
+</head>
+<body>
+<div id="gate">
+  <div class="card">
+    <div class="tag">18+</div>
+    <h2>Sissy House</h2>
+    <p>Оригінальна браузерна гра для дорослих: гуртожиток, де фембой і футанарі-сусідки втягують героя в сісіфікацію. Інтимні сцени замінені кольоровими заглушками. Усі персонажі — вигадані повнолітні.</p>
+    <div class="row">
+      <button class="choice" id="enter">Мені є 18. Увійти в дім</button>
+      <button class="ghost" id="leave">Вийти</button>
+    </div>
+  </div>
+</div>
+<div id="app" class="hidden">
+  <header>
+    <h1>Sissy <span>House</span></h1>
+    <div class="stats" id="stats"></div>
+  </header>
+  <main>
+    <aside>
+      <div class="muted">Локації</div>
+      <div id="rooms"></div>
+      <div class="muted" style="margin-top:12px">Об’єкти</div>
+      <div id="objects"></div>
+    </aside>
+    <section id="stage"></section>
+    <section id="log"></section>
+  </main>
+  <footer>
+    <span class="muted" id="dayline"></span>
+    <div class="row">
+      <button class="ghost" id="save">Зберегти</button>
+      <button class="ghost" id="load">Завантажити</button>
+      <button class="ghost" id="sleep">Наступний день</button>
+    </div>
+  </footer>
+</div>
+<div id="minigame" class="hidden"></div>
+<script>
+const STAGES = [
+  { name: "Звичайний хлопець", look: "худі і джинси" },
+  { name: "М’який светр", look: "оверсайз і шорти" },
+  { name: "Перша спідниця", look: "плісирована спідниця поверх шортів" },
+  { name: "Панчохи", look: "гольфы і блузка" },
+  { name: "Повний образ", look: "сукня покоївки, бант" },
+  { name: "Каблуки", look: "платформи і легкий макіяж" },
+  { name: "Сісі-фінал", look: "повний фем-образ, чокер, шпильки" }
+];
+const ROOMS = {
+  dorm: { title: "Кімната 9¾", blurb: "Двоярусне ліжко, дзеркало в підлогу і шафа, яку Ніко вже переповнив спідницями." },
+  bath: { title: "Ванна", blurb: "Пар, рожеве світло і полиця з косметикою Ліни." },
+  hall: { title: "Вітальня", blurb: "Диван, килим для поз і телевізор із серіалами про ідолів." },
+  kitchen: { title: "Кухня", blurb: "Міра готує сніданок у фартусі. На столі розклад тренувань." },
+  yard: { title: "Двір", blurb: "Сад, гойдалка і кам’яна статуя, яку можна «навчити» позі." },
+  club: { title: "Клуб «Сукуб»", blurb: "Нічний бар. Вхід після 4-го дня і фемінності 25." }
+};
+const OBJECTS = {
+  dorm: [
+    ["mirror", "Дзеркало", "pose"],
+    ["wardrobe", "Шафа", "wardrobe"],
+    ["bed", "Ліжко Ніко", "niko"],
+    ["desk", "Щоденник", "journal"]
+  ],
+  bath: [
+    ["makeup", "Косметичка", "makeup"],
+    ["shower", "Душ", "shower"],
+    ["scale", "Ваги грації", "balance"]
+  ],
+  hall: [
+    ["mat", "Килим поз", "rhythm"],
+    ["sofa", "Диван Ліни", "lina"],
+    ["tv", "Телевізор", "tv"]
+  ],
+  kitchen: [
+    ["apron", "Фартух Міри", "mira"],
+    ["laundry", "Кошик білизни", "laundry"],
+    ["note", "Розклад", "schedule"]
+  ],
+  yard: [
+    ["statue", "Статуя", "statue"],
+    ["swing", "Гойдалка", "swing"],
+    ["flowers", "Клумба", "flowers"]
+  ],
+  club: [
+    ["bar", "Барна стійка", "bar"],
+    ["dance", "Танцпол", "dance"],
+    ["vip", "VIP-кабінка", "vip"]
+  ]
+};
+const CAST = {
+  niko: { name: "Ніко", role: "фембой-сусід", hue: "#7dffa8" },
+  lina: { name: "Ліна", role: "футанарі, грайлива", hue: "#c9a6ff" },
+  mira: { name: "Міра", role: "футанарі, господиня дому", hue: "#ff6fae" }
+};
+const state = load() || {
+  day: 1, money: 20, fem: 4, obe: 0, grace: 2, stamina: 5,
+  stage: 0, room: "dorm", flags: {}, log: ["Ти переїхав у дім 9¾. Міра сказала: правила прості — слухай і змінюйся."],
+  gallery: []
+};
+function load() {
+  try { return JSON.parse(localStorage.getItem("sissy-house-v1")); } catch { return null; }
+}
+function persist() { localStorage.setItem("sissy-house-v1", JSON.stringify(state)); }
+function log(t) { state.log.unshift(t); state.log = state.log.slice(0, 24); }
+function bump(k, n) { state[k] = Math.max(0, Math.min(100, state[k] + n)); }
+function stageUp() {
+  const need = [0, 12, 24, 38, 52, 68, 84];
+  while (state.stage < 6 && state.fem >= need[state.stage + 1]) state.stage++;
+}
+function cg(id, title) {
+  if (!state.gallery.includes(id)) { state.gallery.push(id); log("Галерея: заглушка «" + title + "»."); }
+}
+function render() {
+  stageUp();
+  document.getElementById("stats").innerHTML = [
+    ["День", state.day], ["Гроші", state.money], ["Фем", state.fem], ["Слух", state.obe], ["Грація", state.grace]
+  ].map(([k,v]) => `<span class="chip">${k} <b>${v}</b></span>`).join("");
+  document.getElementById("dayline").textContent = STAGES[state.stage].name + " · " + STAGES[state.stage].look + " · енергія " + state.stamina;
+  document.getElementById("rooms").innerHTML = Object.entries(ROOMS).map(([id, r]) => {
+    const locked = id === "club" && (state.day < 4 || state.fem < 25);
+    return `<button class="room-btn ${state.room===id?"active":""}" data-room="${id}" ${locked?"disabled":""}>${r.title}${locked?" (закрито)":""}</button>`;
+  }).join("");
+  document.getElementById("objects").innerHTML = OBJECTS[state.room].map(([id, name]) => `<button class="obj" data-obj="${id}">${name}</button>`).join("");
+  const room = ROOMS[state.room];
+  document.getElementById("stage").innerHTML = `
+    <div class="scene">
+      <div class="ph">ЗАГЛУШКА<br><small>${room.title}<br>без інтимної графіки</small></div>
+      <div>
+        <div class="tag">день ${state.day}</div>
+        <h2>${room.title}</h2>
+        <p class="story">${room.blurb} Зараз на тобі: ${STAGES[state.stage].look}.</p>
+        <div class="bars">
+          <div class="muted">Сісіфікація</div>
+          <div class="bar"><i style="width:${state.fem}%"></i></div>
+          <div class="muted">Послух ${state.obe} · грація ${state.grace}</div>
+        </div>
+      </div>
+    </div>
+    <div id="choices"></div>
+    <div class="muted">Галерея заглушок: ${state.gallery.length}/12</div>`;
+  document.getElementById("log").innerHTML = state.log.map(x => `<div class="entry">${x}</div>`).join("");
+  document.querySelectorAll("[data-room]").forEach(b => b.onclick = () => { state.room = b.dataset.room; render(); });
+  document.querySelectorAll("[data-obj]").forEach(b => b.onclick = () => interact(b.dataset.obj));
+  persist();
+}
+function choices(list) {
+  document.getElementById("choices").innerHTML = list.map((c,i) => `<button class="choice" data-i="${i}">${c.label}</button>`).join("");
+  document.querySelectorAll("#choices .choice").forEach(b => b.onclick = () => list[+b.dataset.i].run());
+}
+function talk(who, lines, after) {
+  const c = CAST[who];
+  document.getElementById("stage").innerHTML = `
+    <div class="scene">
+      <div class="ph" style="background:${c.hue}33;border-color:${c.hue}">${c.name}<small>${c.role}<br>CG-заглушка</small></div>
+      <div><div class="tag">${c.role}</div><h2>${c.name}</h2><p class="story" id="line"></p></div>
+    </div><div id="choices"></div>`;
+  let i = 0;
+  const next = () => {
+    if (i >= lines.length) { after(); return; }
+    document.getElementById("line").textContent = lines[i++];
+    choices([{ label: i < lines.length ? "Далі" : "Закрити", run: next }]);
+  };
+  next();
+}
+function spend() {
+  if (state.stamina <= 0) { log("Енергії немає. Лягай спати."); render(); return false; }
+  state.stamina--; return true;
+}
+function interact(id) {
+  const map = {
+    mirror: () => openMini("pose"),
+    wardrobe: () => wardrobe(),
+    desk: () => journal(),
+    niko: () => niko(),
+    makeup: () => openMini("makeup"),
+    shower: () => shower(),
+    scale: () => openMini("balance"),
+    mat: () => openMini("rhythm"),
+    lina: () => lina(),
+    tv: () => tv(),
+    apron: () => mira(),
+    laundry: () => openMini("laundry"),
+    note: () => schedule(),
+    statue: () => statue(),
+    swing: () => swing(),
+    flowers: () => flowers(),
+    bar: () => bar(),
+    dance: () => openMini("dance"),
+    vip: () => vip()
+  };
+  (map[id] || render)();
+}
+function wardrobe() {
+  if (!spend()) return;
+  const opts = STAGES.slice(0, state.stage + 1).map((s, i) => ({
+    label: "Вдягнути: " + s.look,
+    run: () => { log("Ти перевдягнувся: " + s.look + "."); bump("fem", i ? 1 : 0); cg("wardrobe", "Шафа"); render(); }
+  }));
+  opts.push({ label: "Попросити Ніко підібрати образ (+фем)", run: () => { bump("fem", 4); bump("obe", 2); cg("niko-fit", "Примірка з Ніко"); log("Ніко затягнув бант і поправив панчохи. Заглушка сцени."); render(); }});
+  document.getElementById("choices").innerHTML = "";
+  choices(opts);
+}
+function journal() {
+  log("Щоденник: стадія «" + STAGES[state.stage].name + "». Міра пише, що повний образ відкривається на 84 фем.");
+  render();
+}
+function niko() {
+  talk("niko", [
+    "Не смикайся. Я теж починав із худі.",
+    "Сісіфікація тут — не покарання, а розклад: одяг, хода, голос, звичка слухати.",
+    "Хочеш, проведу вечірню примірку?"
+  ], () => choices([
+    { label: "Так, навчи мене", run: () => { bump("fem", 6); bump("grace", 3); state.money += 5; cg("niko-night", "Вечір із Ніко"); log("Ніко показав, як сідати в спідниці. +гроші за допомогу з його замовленням."); render(); } },
+    { label: "Сьогодні ні", run: () => { bump("obe", -1); log("Ніко знизав плечима."); render(); } }
+  ]));
+}
+function shower() {
+  if (!spend()) return;
+  bump("grace", 1);
+  cg("shower", "Душ");
+  log("Душ. Заглушка: пара і рушник. Грація +1.");
+  render();
+}
+function lina() {
+  talk("lina", [
+    "О, нова іграшка Міри. Сідай ближче, я не кусаюсь. Майже.",
+    "У клубі я барменка. Якщо пройдеш мій ритм — відкрию VIP.",
+    "А поки: хочеш міні-урок «як не червоніти, коли фута хвалить твої ноги»?"
+  ], () => choices([
+    { label: "Урок Ліни", run: () => { if (!spend()) return; bump("fem", 5); bump("obe", 4); cg("lina-lesson", "Урок Ліни"); log("Ліна водила пальцем по заглушці-силуету і коментувала поставу."); render(); } },
+    { label: "Піти", run: render }
+  ]));
+}
+function tv() {
+  bump("fem", 1);
+  log("Серіал про ідолів. Ти мимоволі повторив жест рукою.");
+  render();
+}
+function mira() {
+  talk("mira", [
+    "У цьому домі я ставлю правила. Сісіфікація йде щаблями: одяг, звичка, послух, публічний вихід.",
+    "Відпрацюй білизну, ходу на каблуках і позу біля дзеркала. Тоді поговорю про клуб.",
+    "Не змушую. Але дім любить тих, хто грає до кінця."
+  ], () => choices([
+    { label: "Прийняти розклад", run: () => { bump("obe", 6); bump("fem", 3); state.flags.schedule = true; cg("mira-rules", "Правила Міри"); log("Міра повісила фартух тобі на плече. Це ще не уніформа, але вже роль."); render(); } },
+    { label: "Сперечатися", run: () => { bump("obe", -2); log("Міра посміхнулась. «Ще день-два.»"); render(); } }
+  ]));
+}
+function schedule() {
+  log("Розклад: вранці шафа, вдень міні-ігри, ввечері хтось із сусідок. Клуб після дня 4.");
+  render();
+}
+function statue() {
+  if (!spend()) return;
+  bump("grace", 4); bump("fem", 2);
+  cg("statue", "Статуя у дворі");
+  log("Ти повторив позу статуї. Заглушка: кам’яний силует і ти поруч.");
+  render();
+}
+function swing() {
+  bump("fem", 1);
+  log("Гойдалка скрипнула. Вітер підняв край тканини — знову заглушка, не кадр.");
+  render();
+}
+function flowers() {
+  state.money += 8; bump("grace", 1);
+  log("Ти зібрав букет для Міри. +8 грошей від сусідки через паркан.");
+  render();
+}
+function bar() {
+  if (!spend()) return;
+  state.money += 15; bump("obe", 2); cg("bar", "Бар");
+  log("Зміна в барі. Ти не сказав, що студент — Ліна кивнула. +15.");
+  render();
+}
+function vip() {
+  if (state.grace < 20) { log("VIP зачинений, поки грація нижче 20."); render(); return; }
+  cg("vip", "VIP");
+  bump("fem", 8); bump("obe", 5);
+  log("VIP: Ліна і Міра сіли обабіч. Сцена замінена заглушкою з їхніми іменами.");
+  render();
+}
+function openMini(kind) {
+  if (!spend()) return;
+  const host = document.getElementById("minigame");
+  host.classList.remove("hidden");
+  if (kind === "makeup") makeup(host);
+  if (kind === "balance") balance(host);
+  if (kind === "rhythm") rhythm(host);
+  if (kind === "laundry") laundry(host);
+  if (kind === "pose") pose(host);
+  if (kind === "dance") dance(host);
+}
+function closeMini(score, label) {
+  document.getElementById("minigame").classList.add("hidden");
+  const good = score >= 6;
+  bump("fem", good ? 5 : 2);
+  bump("grace", good ? 4 : 1);
+  bump("obe", good ? 2 : 0);
+  state.money += good ? 10 : 3;
+  cg(label, label);
+  log(label + ": рахунок " + score + ". " + (good ? "Сусідки аплодують." : "Ще практика."));
+  render();
+}
+function makeup(host) {
+  const icons = ["губ", "тіні", "рум’яна", "бант", "чокер", "блиск"];
+  let deck = icons.concat(icons).sort(() => Math.random() - .5);
+  let open = [], lock = [], score = 0;
+  host.innerHTML = `<div class="card"><h2>Міні-гра: косметичка Ніко</h2><p class="muted">Знайди пари. 6 пар.</p><div class="row" id="grid"></div></div>`;
+  const grid = host.querySelector("#grid");
+  deck.forEach((name, i) => {
+    const b = document.createElement("button");
+    b.className = "choice"; b.style.width = "30%"; b.textContent = "■";
+    b.onclick = () => {
+      if (lock.includes(i) || open.includes(i)) return;
+      b.textContent = name; open.push(i);
+      if (open.length === 2) {
+        const [a, c] = open;
+        if (deck[a] === deck[c]) { lock.push(a, c); score++; if (score === 6) setTimeout(() => closeMini(10, "Макіяж"), 300); }
+        else setTimeout(() => { [...grid.children].forEach((el, idx) => { if (!lock.includes(idx)) el.textContent = "■"; }); }, 400);
+        open = [];
+      }
+    };
+    grid.appendChild(b);
+  });
+}
+function balance(host) {
+  host.innerHTML = `<div class="card"><h2>Каблуки: утримай центр</h2><p class="muted">Клікай, коли повзунок у золотій зоні. 8 спроб.</p><div class="bar"><i id="knob" style="width:8px;background:var(--gold)"></i></div><button class="choice" id="tap">Крок</button><div id="sc"></div></div>`;
+  let x = 0, dir = 1, tries = 0, score = 0, timer;
+  const knob = host.querySelector("#knob");
+  timer = setInterval(() => { x += dir * 3; if (x > 92 || x < 0) dir *= -1; knob.style.marginLeft = x + "%"; }, 30);
+  host.querySelector("#tap").onclick = () => {
+    tries++; if (x > 40 && x < 58) score++;
+    host.querySelector("#sc").textContent = score + " / " + tries;
+    if (tries >= 8) { clearInterval(timer); closeMini(score, "Хода на каблуках"); }
+  };
+}
+function rhythm(host) {
+  host.innerHTML = `<div class="card"><h2>Поза з Мірою</h2><p>Коли спалахне «ЗАРАЗ» — тисни.</p><div class="big" id="flash">...</div><button class="choice" id="hit">Поза</button></div>`;
+  let score = 0, round = 0, hot = false, t;
+  const flash = host.querySelector("#flash");
+  function wave() {
+    if (round >= 8) { clearTimeout(t); closeMini(score, "Пози"); return; }
+    hot = false; flash.textContent = "чекай";
+    t = setTimeout(() => { hot = true; flash.textContent = "ЗАРАЗ"; setTimeout(() => { if (hot) { hot = false; round++; wave(); } }, 700); }, 500 + Math.random() * 900);
+  }
+  host.querySelector("#hit").onclick = () => { if (hot) { score++; hot = false; round++; flash.textContent = "так"; wave(); } };
+  wave();
+}
+function laundry(host) {
+  const items = [
+    ["панчохи", "фем"], ["краватка", "старі"], ["пояс", "фем"], ["худі", "старі"],
+    ["бант", "фем"], ["джогери", "старі"], ["чокер", "фем"], ["кепка", "старі"]
+  ].sort(() => Math.random() - .5);
+  let i = 0, score = 0;
+  host.innerHTML = `<div class="card"><h2>Сортування білизни</h2><p id="item"></p><div class="row"><button class="choice" id="a">У скриню сісі</button><button class="choice" id="b">У коробку минулого</button></div></div>`;
+  const item = host.querySelector("#item");
+  function show() { if (i >= items.length) { closeMini(score, "Білизна"); return; } item.textContent = items[i][0]; }
+  host.querySelector("#a").onclick = () => { if (items[i][1] === "фем") score++; i++; show(); };
+  host.querySelector("#b").onclick = () => { if (items[i][1] === "старі") score++; i++; show(); };
+  show();
+}
+function pose(host) {
+  host.innerHTML = `<div class="card"><h2>Дзеркало: утримай позу</h2><canvas id="c" width="560" height="220"></canvas><p class="muted">Веди курсор по дузі. Не зривайся з доріжки.</p></div>`;
+  const c = host.querySelector("#c"), g = c.getContext("2d");
+  let on = false, prog = 0, lost = 0;
+  function yAt(x) { return 110 + Math.sin(x / 40) * 50; }
+  function draw(px, py) {
+    g.clearRect(0, 0, 560, 220);
+    g.strokeStyle = "#ff6fae"; g.lineWidth = 16; g.beginPath();
+    for (let x = 20; x < 540; x++) { const y = yAt(x); x === 20 ? g.moveTo(x, y) : g.lineTo(x, y); }
+    g.stroke();
+    g.fillStyle = "#ffd36e"; g.fillRect(20 + prog, yAt(20 + prog) - 6, 10, 12);
+    if (px) { g.fillStyle = "#fff"; g.beginPath(); g.arc(px, py, 5, 0, 7); g.fill(); }
+  }
+  draw();
+  c.onpointerdown = () => on = true;
+  c.onpointerup = () => on = false;
+  c.onpointermove = e => {
+    if (!on) return;
+    const r = c.getBoundingClientRect();
+    const px = (e.clientX - r.left) * (560 / r.width);
+    const py = (e.clientY - r.top) * (220 / r.height);
+    const ideal = yAt(px);
+    draw(px, py);
+    if (Math.abs(py - ideal) < 18) prog = Math.max(prog, px - 20); else lost++;
+    if (prog > 500) closeMini(10, "Дзеркало");
+    if (lost > 40) closeMini(3, "Дзеркало");
+  };
+}
+function dance(host) {
+  const keys = ["A", "S", "D", "F"];
+  let score = 0, left = 10;
+  host.innerHTML = `<div class="card"><h2>Танцпол із Ліною</h2><p>Натисни підсвічену клавішу або кнопку.</p><div class="big" id="k">A</div><div class="row" id="btns"></div></div>`;
+  const k = host.querySelector("#k");
+  let cur = "A";
+  function next() {
+    if (left <= 0) { closeMini(score, "Танець"); return; }
+    cur = keys[Math.floor(Math.random() * 4)];
+    k.textContent = cur;
+  }
+  keys.forEach(key => {
+    const b = document.createElement("button");
+    b.className = "choice"; b.textContent = key; b.style.width = "22%";
+    b.onclick = () => { if (key === cur) score++; left--; next(); };
+    host.querySelector("#btns").appendChild(b);
+  });
+  window.onkeydown = e => {
+    const key = e.key.toUpperCase();
+    if (!keys.includes(key) || host.classList.contains("hidden")) return;
+    if (key === cur) score++;
+    left--; next();
+  };
+  next();
+}
+document.getElementById("enter").onclick = () => { document.getElementById("gate").classList.add("hidden"); document.getElementById("app").classList.remove("hidden"); render(); };
+document.getElementById("leave").onclick = () => { location.href = "https://www.google.com"; };
+document.getElementById("save").onclick = () => { persist(); log("Збережено в цьому браузері."); render(); };
+document.getElementById("load").onclick = () => { const s = load(); if (s) Object.assign(state, s); render(); };
+document.getElementById("sleep").onclick = () => {
+  state.day++; state.stamina = 5 + Math.floor(state.grace / 20);
+  if (state.day === 4) log("День 4. Клуб може відчинитись, якщо фемінність від 25.");
+  if (state.stage >= 6) log("Фінал сісіфікації: дім прийняв новий образ. Галерея заглушок зібрана наскільки вистачило сцен.");
+  log("Новий день " + state.day + ". Міра лишила на столі панчохи й записку.");
+  render();
+};
+</script>
+</body>
+</html>
